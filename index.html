@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Prueba AR — Escultura v06</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+  <style>
+    :root { color-scheme: light; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f3f1ec;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    }
+    model-viewer {
+      width: 100vw;
+      height: 100svh;
+      background: #f3f1ec;
+      --poster-color: #f3f1ec;
+    }
+    .ar-button {
+      position: absolute;
+      left: 50%;
+      bottom: max(28px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 20px;
+      font-size: 15px;
+      line-height: 1;
+      background: rgba(255, 255, 255, 0.88);
+      color: #111;
+      box-shadow: 0 8px 30px rgba(0,0,0,.18);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      cursor: pointer;
+    }
+    .status {
+      position: absolute;
+      top: max(18px, env(safe-area-inset-top));
+      left: 18px;
+      right: 18px;
+      font-size: 13px;
+      line-height: 1.35;
+      color: rgba(0,0,0,.58);
+      pointer-events: none;
+      text-align: center;
+    }
+    .unsupported {
+      display: none;
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 92px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.92);
+      color: #222;
+      font-size: 13px;
+      line-height: 1.35;
+      box-shadow: 0 8px 30px rgba(0,0,0,.12);
+    }
+    .hide { display: none; }
+  </style>
+</head>
+<body>
+  <model-viewer
+    id="viewer"
+    src="escultura_v06.glb?v=06"
+    alt="Escultura digital en realidad aumentada"
+    ar
+    ar-modes="webxr scene-viewer quick-look"
+    ar-scale="fixed"
+    camera-controls
+    touch-action="pan-y"
+    disable-zoom
+    auto-rotate
+    camera-orbit="35deg 65deg 4m"
+    field-of-view="30deg"
+    environment-image="environment.png"
+    skybox-image="environment.png"
+    exposure="0.9"
+    shadow-intensity="0"
+    shadow-softness="1"
+    tone-mapping="aces">
+
+    <!-- Cuando tengas el USDZ, añade: ios-src="escultura.usdz" dentro de <model-viewer> -->
+
+    <button slot="ar-button" class="ar-button">Ver en AR</button>
+  </model-viewer>
+
+  <div class="status" id="status">Cargando escultura…</div>
+  <div class="unsupported" id="unsupported">Este dispositivo puede ver la pieza en 3D, pero quizá no sea compatible con AR desde navegador.</div>
+
+  <script>
+    const viewer = document.querySelector('#viewer');
+    const status = document.querySelector('#status');
+    const unsupported = document.querySelector('#unsupported');
+
+    viewer.addEventListener('load', () => {
+      status.classList.add('hide');
+    });
+
+    viewer.addEventListener('error', () => {
+      status.textContent = 'No se ha podido cargar el modelo. Revisa rutas, peso del archivo o tipos MIME del servidor.';
+      status.classList.remove('hide');
+    });
+
+    viewer.addEventListener('ar-status', (event) => {
+      if (event.detail.status === 'session-started') {
+        status.classList.add('hide');
+        unsupported.style.display = 'none';
+      }
+      if (event.detail.status === 'failed') {
+        unsupported.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
