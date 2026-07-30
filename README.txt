@@ -1,12 +1,11 @@
-Prueba AR Lola — high 01
+Prueba AR Lola — high 01 / environment oculto
 
 Archivos:
 - index.html
-- escultura_high_01.glb: nuevo modelo actualizado
-- environment.png: entorno usado solo para iluminación, no como fondo visible
+- escultura_high_01.glb
+- environment.png
 
-Notas:
-- El HDRI/environment no se muestra como fondo.
-- shadow-intensity está a 0 para ver solo la sombra/materiales del modelo.
-- Modelo original: test_high_01.glb
-- Peso aproximado del GLB: 24.9 MB
+Configuración:
+- Se usa environment-image="environment.png" para iluminar/reflejar.
+- NO se usa skybox-image, así que el environment map no aparece como fondo en la preview.
+- shadow-intensity está a 0 para no mezclar sombras automáticas con la sombra del modelo.
