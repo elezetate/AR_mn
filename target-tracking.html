@@ -2,271 +2,96 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Target Tracking Test</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+  />
+  <title>AR Target Test</title>
 
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/three.js/examples/marker-training/threex-arpatternfile.js"></script>
 
   <style>
-    :root {
-      color-scheme: light;
-      --bg: #efede7;
-      --panel: rgba(255, 255, 255, 0.9);
-      --text: #171717;
-      --muted: #5a5a5a;
-      --line: rgba(0, 0, 0, 0.08);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
     html,
     body {
       margin: 0;
       width: 100%;
-      min-height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
     }
 
     body {
-      padding: 20px;
+      position: fixed;
+      inset: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     }
 
-    .shell {
-      max-width: 980px;
-      margin: 0 auto;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      padding: 22px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    h1,
-    h2,
-    p {
-      margin: 0;
-    }
-
-    h1 {
-      font-size: clamp(28px, 5vw, 42px);
-      line-height: 1.05;
-      letter-spacing: -0.03em;
-      margin-bottom: 10px;
-    }
-
-    .intro {
-      margin-bottom: 22px;
-      color: var(--muted);
-      line-height: 1.45;
-      max-width: 720px;
-    }
-
-    .grid {
-      display: grid;
-      gap: 18px;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      margin-top: 18px;
-    }
-
-    .card {
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: 16px;
-      background: rgba(255, 255, 255, 0.72);
-    }
-
-    .card h2 {
-      font-size: 17px;
-      margin-bottom: 10px;
-    }
-
-    .card p,
-    .steps li {
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
-    .thumb {
+    #app,
+    a-scene {
+      position: fixed;
+      inset: 0;
       width: 100%;
-      border-radius: 18px;
-      background: #fff;
-      border: 1px solid var(--line);
-      display: block;
-      aspect-ratio: 1 / 1;
-      object-fit: contain;
-      padding: 10px;
-    }
-
-    .actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 22px;
-    }
-
-    button,
-    .link-button {
-      appearance: none;
-      border: 0;
-      border-radius: 999px;
-      padding: 13px 18px;
-      font: inherit;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .primary {
-      background: #101010;
-      color: #fff;
-    }
-
-    .secondary {
-      background: rgba(255, 255, 255, 0.92);
-      color: #101010;
-      border: 1px solid var(--line);
-    }
-
-    .steps {
-      margin: 14px 0 0;
-      padding-left: 18px;
+      height: 100%;
     }
 
     .status {
-      margin-top: 16px;
-      color: var(--muted);
-      min-height: 1.5em;
-    }
-
-    #ar-root {
-      display: none;
       position: fixed;
-      inset: 0;
-      background: #000;
-      z-index: 20;
-    }
-
-    #ar-root.active {
-      display: block;
-    }
-
-    .ar-ui {
-      position: fixed;
-      inset: auto 14px 14px 14px;
-      display: none;
-      justify-content: space-between;
-      gap: 10px;
-      z-index: 30;
-      pointer-events: none;
-    }
-
-    .ar-ui.active {
-      display: flex;
-    }
-
-    .pill {
-      background: rgba(255, 255, 255, 0.88);
-      color: #111;
+      left: 50%;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 10;
+      padding: 10px 14px;
       border-radius: 999px;
-      padding: 11px 14px;
-      font-size: 14px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      pointer-events: auto;
+      background: rgba(0, 0, 0, 0.58);
+      color: #fff;
+      font-size: 13px;
+      line-height: 1;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 180ms ease;
     }
 
-    .close-ar {
-      background: rgba(17, 17, 17, 0.9);
-      color: #fff;
+    .status.visible {
+      opacity: 1;
+    }
+
+    .status.error {
+      opacity: 1;
+      white-space: normal;
+      max-width: min(88vw, 420px);
+      text-align: center;
+      line-height: 1.35;
     }
   </style>
 </head>
 
 <body>
-  <div class="shell">
-    <div class="panel" id="setup-panel">
-      <h1>Prueba de target tracking</h1>
-      <p class="intro">
-        Esta versión usa la imagen de prueba como base del marker y coloca la escultura a 2 metros por detrás de la placa.
-        La idea es simular que el público escanea una señal física y la pieza aparece al fondo.
-      </p>
-
-      <div class="grid">
-        <div class="card">
-          <h2>Imagen base</h2>
-          <img class="thumb" src="target-test.svg" alt="Imagen base del target" />
-        </div>
-
-        <div class="card">
-          <h2>Marker generado</h2>
-          <img class="thumb" id="marker-preview" alt="Vista previa del marker" />
-          <div class="actions">
-            <a class="link-button secondary" id="marker-download" download="target-marker.png">Descargar marker</a>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Cómo probarlo</h2>
-          <ol class="steps">
-            <li>Imprime o muestra en otra pantalla el marker generado.</li>
-            <li>Ponlo de frente, como si fuese la placa.</li>
-            <li>Abre la cámara AR y apunta al marker.</li>
-            <li>La pieza debería aparecer 2 metros por detrás del plano del marker.</li>
-          </ol>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="primary" id="start-ar">Abrir prueba AR</button>
-      </div>
-
-      <p class="status" id="status">Generando marker desde la imagen…</p>
-    </div>
-  </div>
-
-  <div id="ar-root"></div>
-
-  <div class="ar-ui" id="ar-ui">
-    <button class="pill close-ar" id="close-ar">Cerrar AR</button>
-    <div class="pill">Offset: 2 m detrás de la placa</div>
-  </div>
+  <div id="app"></div>
+  <div id="status" class="status visible">Abriendo cámara…</div>
 
   <script>
     const TARGET_IMAGE = "target-test.svg";
-    const MODEL_URL = "escultura_high_01.glb?v=targettest01";
+    const MODEL_URL = "escultura_high_01.glb?v=targettest02";
     const PATTERN_RATIO = 0.5;
-    const MARKER_SIZE = 1024;
     const OFFSET_Z = -2;
     const MODEL_SCALE = "0.3 0.3 0.3";
     const MODEL_ROTATION = "0 180 0";
 
+    const app = document.getElementById("app");
     const statusEl = document.getElementById("status");
-    const markerPreviewEl = document.getElementById("marker-preview");
-    const markerDownloadEl = document.getElementById("marker-download");
-    const startButton = document.getElementById("start-ar");
-    const arRoot = document.getElementById("ar-root");
-    const arUi = document.getElementById("ar-ui");
-    const closeAr = document.getElementById("close-ar");
 
-    let patternBlobUrl = null;
-    let fullMarkerUrl = null;
-    let sceneMounted = false;
-
-    function setStatus(text) {
+    function setStatus(text, isError = false) {
       statusEl.textContent = text;
+      statusEl.classList.toggle("error", isError);
+      statusEl.classList.add("visible");
+    }
+
+    function hideStatus() {
+      statusEl.classList.remove("visible");
     }
 
     function generatePattern(imageUrl) {
@@ -278,39 +103,18 @@
       });
     }
 
-    function buildMarker(imageUrl) {
-      return new Promise((resolve) => {
-        THREEx.ArPatternFile.buildFullMarker(
-          imageUrl,
-          PATTERN_RATIO,
-          MARKER_SIZE,
-          "black",
-          (markerUrl) => resolve(markerUrl)
-        );
-      });
-    }
-
-    async function prepareMarker() {
-      setStatus("Generando marker desde la imagen…");
-      fullMarkerUrl = await buildMarker(TARGET_IMAGE);
-      patternBlobUrl = await generatePattern(TARGET_IMAGE);
-
-      markerPreviewEl.src = fullMarkerUrl;
-      markerDownloadEl.href = fullMarkerUrl;
-      startButton.disabled = false;
-      setStatus("Marker listo. Puedes descargarlo o lanzar la prueba AR.");
-    }
-
-    function mountScene() {
-      if (sceneMounted) return;
-
+    function mountScene(patternUrl) {
       const scene = document.createElement("a-scene");
       scene.setAttribute("embedded", "");
-      scene.setAttribute("renderer", "antialias: true; alpha: true; colorManagement: true;");
       scene.setAttribute("vr-mode-ui", "enabled: false");
+      scene.setAttribute("device-orientation-permission-ui", "enabled: false");
+      scene.setAttribute(
+        "renderer",
+        "antialias: true; alpha: true; colorManagement: true; precision: mediump;"
+      );
       scene.setAttribute(
         "arjs",
-        "sourceType: webcam; debugUIEnabled: false; detectionMode: mono; patternRatio: 0.5;"
+        "sourceType: webcam; facingMode: environment; debugUIEnabled: false; detectionMode: mono; patternRatio: 0.5; trackingMethod: best;"
       );
 
       const assets = document.createElement("a-assets");
@@ -321,7 +125,7 @@
       scene.appendChild(assets);
 
       const ambientLight = document.createElement("a-entity");
-      ambientLight.setAttribute("light", "type: ambient; intensity: 1.1; color: #ffffff;");
+      ambientLight.setAttribute("light", "type: ambient; intensity: 1.15; color: #ffffff;");
       scene.appendChild(ambientLight);
 
       const dirLight = document.createElement("a-entity");
@@ -331,11 +135,15 @@
 
       const marker = document.createElement("a-marker");
       marker.setAttribute("type", "pattern");
-      marker.setAttribute("url", patternBlobUrl);
+      marker.setAttribute("url", patternUrl);
       marker.setAttribute("smooth", "true");
       marker.setAttribute("smoothCount", "10");
       marker.setAttribute("smoothTolerance", "0.01");
       marker.setAttribute("smoothThreshold", "5");
+
+      marker.addEventListener("markerFound", () => {
+        hideStatus();
+      });
 
       const model = document.createElement("a-entity");
       model.setAttribute("gltf-model", "#sculpture-glb");
@@ -343,36 +151,36 @@
       model.setAttribute("rotation", MODEL_ROTATION);
       model.setAttribute("scale", MODEL_SCALE);
       marker.appendChild(model);
-
       scene.appendChild(marker);
 
       const camera = document.createElement("a-entity");
       camera.setAttribute("camera", "");
       scene.appendChild(camera);
 
-      arRoot.appendChild(scene);
-      sceneMounted = true;
+      app.appendChild(scene);
+
+      scene.addEventListener("loaded", () => {
+        setTimeout(() => {
+          if (!marker.object3D.visible) {
+            setStatus("");
+            hideStatus();
+          }
+        }, 1800);
+      });
     }
 
-    startButton.addEventListener("click", () => {
-      if (!patternBlobUrl) return;
-      mountScene();
-      arRoot.classList.add("active");
-      arUi.classList.add("active");
-      document.body.style.overflow = "hidden";
-    });
+    async function boot() {
+      try {
+        setStatus("Abriendo cámara…");
+        const patternUrl = await generatePattern(TARGET_IMAGE);
+        mountScene(patternUrl);
+      } catch (error) {
+        console.error(error);
+        setStatus("No se ha podido abrir la cámara o cargar el efecto.", true);
+      }
+    }
 
-    closeAr.addEventListener("click", () => {
-      arRoot.classList.remove("active");
-      arUi.classList.remove("active");
-      document.body.style.overflow = "";
-    });
-
-    startButton.disabled = true;
-    prepareMarker().catch((error) => {
-      console.error(error);
-      setStatus("No se ha podido generar el marker. Revisa la consola.");
-    });
+    window.addEventListener("load", boot, { once: true });
   </script>
 </body>
 </html>
