@@ -23,7 +23,6 @@
     }
 
     body {
-      position: relative;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     }
 
@@ -36,7 +35,6 @@
     }
 
     #app {
-      overflow: hidden;
       background: #000;
     }
 
@@ -46,68 +44,84 @@
     .arjs-video {
       position: fixed !important;
       inset: 0 !important;
-      width: 100vw !important;
-      height: 100dvh !important;
+      width: 100% !important;
+      height: 100% !important;
       object-fit: cover !important;
       background: #000 !important;
     }
 
-    .status {
+    .overlay {
       position: fixed;
-      left: 50%;
-      bottom: max(20px, env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      z-index: 10;
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.58);
-      color: #fff;
-      font-size: 13px;
-      line-height: 1;
-      letter-spacing: 0.01em;
-      white-space: nowrap;
-      pointer-events: none;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.22);
+      z-index: 20;
       opacity: 0;
+      pointer-events: none;
       transition: opacity 180ms ease;
     }
 
-    .status.visible {
+    .overlay.visible {
       opacity: 1;
+      pointer-events: auto;
     }
 
-    .status.error {
-      opacity: 1;
-      white-space: normal;
-      max-width: min(88vw, 420px);
-      text-align: center;
-      line-height: 1.35;
+    .start-button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 22px;
+      font: inherit;
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #111;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+      -webkit-tap-highlight-color: transparent;
     }
   </style>
 </head>
 
 <body>
   <div id="app"></div>
-  <div id="status" class="status visible">Abriendo cámara…</div>
+  <div id="overlay" class="overlay">
+    <button id="start-button" class="start-button">Abrir camara</button>
+  </div>
 
   <script>
     const TARGET_IMAGE = "target-test.svg";
-    const MODEL_URL = "escultura_high_01.glb?v=targettest02";
+    const MODEL_URL = "escultura_high_01.glb?v=targettest03";
     const PATTERN_RATIO = 0.5;
     const OFFSET_Z = -2;
     const MODEL_SCALE = "0.3 0.3 0.3";
     const MODEL_ROTATION = "0 180 0";
 
     const app = document.getElementById("app");
-    const statusEl = document.getElementById("status");
+    const overlay = document.getElementById("overlay");
+    const startButton = document.getElementById("start-button");
 
-    function setStatus(text, isError = false) {
-      statusEl.textContent = text;
-      statusEl.classList.toggle("error", isError);
-      statusEl.classList.add("visible");
+    let sceneMounted = false;
+    let started = false;
+
+    function showOverlay() {
+      overlay.classList.add("visible");
     }
 
-    function hideStatus() {
-      statusEl.classList.remove("visible");
+    function hideOverlay() {
+      overlay.classList.remove("visible");
+    }
+
+    function fitMedia() {
+      const mediaNodes = document.querySelectorAll("video, canvas, .a-canvas, .arjs-video");
+      mediaNodes.forEach((node) => {
+        node.style.position = "fixed";
+        node.style.inset = "0";
+        node.style.width = "100%";
+        node.style.height = "100%";
+        node.style.objectFit = "cover";
+        node.style.background = "#000";
+      });
     }
 
     function generatePattern(imageUrl) {
@@ -119,36 +133,21 @@
       });
     }
 
-    function fitMediaToViewport() {
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
-      const mediaNodes = document.querySelectorAll("video, canvas, .a-canvas, .arjs-video");
-
-      mediaNodes.forEach((node) => {
-        node.style.position = "fixed";
-        node.style.top = "0";
-        node.style.left = "0";
-        node.style.width = `${viewportWidth}px`;
-        node.style.height = `${viewportHeight}px`;
-        node.style.maxWidth = "none";
-        node.style.maxHeight = "none";
-        node.style.objectFit = "cover";
-        node.style.background = "#000";
-      });
-    }
-
     function mountScene(patternUrl) {
+      if (sceneMounted) return;
+
       const scene = document.createElement("a-scene");
       scene.setAttribute("embedded", "");
       scene.setAttribute("vr-mode-ui", "enabled: false");
       scene.setAttribute("device-orientation-permission-ui", "enabled: false");
+      scene.setAttribute("loading-screen", "enabled: false");
       scene.setAttribute(
         "renderer",
         "antialias: true; alpha: true; colorManagement: true; precision: mediump;"
       );
       scene.setAttribute(
         "arjs",
-        "sourceType: webcam; facingMode: environment; debugUIEnabled: false; detectionMode: mono; patternRatio: 0.5; trackingMethod: best;"
+        "sourceType: webcam; facingMode: environment; debugUIEnabled: false; detectionMode: mono; patternRatio: 0.5;"
       );
 
       const assets = document.createElement("a-assets");
@@ -174,10 +173,7 @@
       marker.setAttribute("smoothCount", "10");
       marker.setAttribute("smoothTolerance", "0.01");
       marker.setAttribute("smoothThreshold", "5");
-
-      marker.addEventListener("markerFound", () => {
-        hideStatus();
-      });
+      marker.addEventListener("markerFound", hideOverlay);
 
       const model = document.createElement("a-entity");
       model.setAttribute("gltf-model", "#sculpture-glb");
@@ -185,6 +181,7 @@
       model.setAttribute("rotation", MODEL_ROTATION);
       model.setAttribute("scale", MODEL_SCALE);
       marker.appendChild(model);
+
       scene.appendChild(marker);
 
       const camera = document.createElement("a-entity");
@@ -192,37 +189,49 @@
       scene.appendChild(camera);
 
       app.appendChild(scene);
+      sceneMounted = true;
 
       scene.addEventListener("loaded", () => {
-        fitMediaToViewport();
-        setTimeout(() => {
-          fitMediaToViewport();
-          if (!marker.object3D.visible) {
-            setStatus("");
-            hideStatus();
-          }
-        }, 1800);
+        fitMedia();
+        setTimeout(fitMedia, 500);
+        setTimeout(fitMedia, 1200);
       });
 
-      scene.addEventListener("renderstart", fitMediaToViewport);
-      window.addEventListener("resize", fitMediaToViewport);
+      scene.addEventListener("renderstart", fitMedia);
+      window.addEventListener("resize", fitMedia);
       window.addEventListener("orientationchange", () => {
-        setTimeout(fitMediaToViewport, 250);
+        setTimeout(fitMedia, 250);
       });
     }
 
-    async function boot() {
+    async function startExperience() {
+      if (started) return;
+      started = true;
+      hideOverlay();
+
       try {
-        setStatus("Abriendo cámara…");
         const patternUrl = await generatePattern(TARGET_IMAGE);
         mountScene(patternUrl);
       } catch (error) {
         console.error(error);
-        setStatus("No se ha podido abrir la cámara o cargar el efecto.", true);
+        started = false;
+        showOverlay();
       }
     }
 
-    window.addEventListener("load", boot, { once: true });
+    window.addEventListener("load", async () => {
+      await startExperience();
+      setTimeout(() => {
+        const video = document.querySelector("video");
+        if (!video || video.readyState < 2) {
+          showOverlay();
+        }
+      }, 1200);
+    }, { once: true });
+
+    startButton.addEventListener("click", () => {
+      startExperience();
+    });
   </script>
 </body>
 </html>
