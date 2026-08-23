@@ -23,8 +23,7 @@
     }
 
     body {
-      position: fixed;
-      inset: 0;
+      position: relative;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     }
 
@@ -34,6 +33,23 @@
       inset: 0;
       width: 100%;
       height: 100%;
+    }
+
+    #app {
+      overflow: hidden;
+      background: #000;
+    }
+
+    video,
+    canvas,
+    .a-canvas,
+    .arjs-video {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100dvh !important;
+      object-fit: cover !important;
+      background: #000 !important;
     }
 
     .status {
@@ -103,6 +119,24 @@
       });
     }
 
+    function fitMediaToViewport() {
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      const mediaNodes = document.querySelectorAll("video, canvas, .a-canvas, .arjs-video");
+
+      mediaNodes.forEach((node) => {
+        node.style.position = "fixed";
+        node.style.top = "0";
+        node.style.left = "0";
+        node.style.width = `${viewportWidth}px`;
+        node.style.height = `${viewportHeight}px`;
+        node.style.maxWidth = "none";
+        node.style.maxHeight = "none";
+        node.style.objectFit = "cover";
+        node.style.background = "#000";
+      });
+    }
+
     function mountScene(patternUrl) {
       const scene = document.createElement("a-scene");
       scene.setAttribute("embedded", "");
@@ -160,12 +194,20 @@
       app.appendChild(scene);
 
       scene.addEventListener("loaded", () => {
+        fitMediaToViewport();
         setTimeout(() => {
+          fitMediaToViewport();
           if (!marker.object3D.visible) {
             setStatus("");
             hideStatus();
           }
         }, 1800);
+      });
+
+      scene.addEventListener("renderstart", fitMediaToViewport);
+      window.addEventListener("resize", fitMediaToViewport);
+      window.addEventListener("orientationchange", () => {
+        setTimeout(fitMediaToViewport, 250);
       });
     }
 
