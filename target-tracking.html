@@ -23,21 +23,39 @@
     }
 
     body {
+      position: fixed;
+      inset: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     }
 
-    #app,
-    a-scene {
+    #overlay {
       position: fixed;
       inset: 0;
-      width: 100%;
-      height: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.14);
+      z-index: 30;
     }
 
-    #app {
-      background: #000;
+    #overlay.visible {
+      display: flex;
     }
 
+    #start-button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 22px;
+      font: inherit;
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.94);
+      color: #111;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
+    }
+
+    a-scene,
     video,
     canvas,
     .a-canvas,
@@ -49,60 +67,26 @@
       object-fit: cover !important;
       background: #000 !important;
     }
-
-    .overlay {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.22);
-      z-index: 20;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 180ms ease;
-    }
-
-    .overlay.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .start-button {
-      appearance: none;
-      border: 0;
-      border-radius: 999px;
-      padding: 14px 22px;
-      font: inherit;
-      font-size: 16px;
-      background: rgba(255, 255, 255, 0.92);
-      color: #111;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
-      -webkit-tap-highlight-color: transparent;
-    }
   </style>
 </head>
 
 <body>
-  <div id="app"></div>
-  <div id="overlay" class="overlay">
-    <button id="start-button" class="start-button">Abrir camara</button>
+  <div id="overlay">
+    <button id="start-button">Abrir camara</button>
   </div>
 
   <script>
     const TARGET_IMAGE = "target-test.svg";
-    const MODEL_URL = "escultura_high_01.glb?v=targettest03";
-    const PATTERN_RATIO = 0.5;
+    const MODEL_URL = "escultura_high_01.glb?v=targettest04";
     const OFFSET_Z = -2;
     const MODEL_SCALE = "0.3 0.3 0.3";
     const MODEL_ROTATION = "0 180 0";
 
-    const app = document.getElementById("app");
     const overlay = document.getElementById("overlay");
     const startButton = document.getElementById("start-button");
 
-    let sceneMounted = false;
     let started = false;
+    let mounted = false;
 
     function showOverlay() {
       overlay.classList.add("visible");
@@ -110,18 +94,6 @@
 
     function hideOverlay() {
       overlay.classList.remove("visible");
-    }
-
-    function fitMedia() {
-      const mediaNodes = document.querySelectorAll("video, canvas, .a-canvas, .arjs-video");
-      mediaNodes.forEach((node) => {
-        node.style.position = "fixed";
-        node.style.inset = "0";
-        node.style.width = "100%";
-        node.style.height = "100%";
-        node.style.objectFit = "cover";
-        node.style.background = "#000";
-      });
     }
 
     function generatePattern(imageUrl) {
@@ -133,22 +105,44 @@
       });
     }
 
+    function fitMedia() {
+      const nodes = document.querySelectorAll("video, canvas, .a-canvas, .arjs-video");
+      nodes.forEach((node) => {
+        node.style.position = "fixed";
+        node.style.inset = "0";
+        node.style.width = "100%";
+        node.style.height = "100%";
+        node.style.objectFit = "cover";
+      });
+    }
+
+    function buildArString() {
+      const width = window.innerWidth || 390;
+      const height = window.innerHeight || 844;
+
+      return [
+        "sourceType: webcam",
+        "facingMode: environment",
+        "debugUIEnabled: false",
+        "detectionMode: mono",
+        "patternRatio: 0.5",
+        "sourceWidth: 1280",
+        "sourceHeight: 960",
+        `displayWidth: ${width}`,
+        `displayHeight: ${height}`
+      ].join("; ");
+    }
+
     function mountScene(patternUrl) {
-      if (sceneMounted) return;
+      if (mounted) return;
 
       const scene = document.createElement("a-scene");
       scene.setAttribute("embedded", "");
       scene.setAttribute("vr-mode-ui", "enabled: false");
       scene.setAttribute("device-orientation-permission-ui", "enabled: false");
       scene.setAttribute("loading-screen", "enabled: false");
-      scene.setAttribute(
-        "renderer",
-        "antialias: true; alpha: true; colorManagement: true; precision: mediump;"
-      );
-      scene.setAttribute(
-        "arjs",
-        "sourceType: webcam; facingMode: environment; debugUIEnabled: false; detectionMode: mono; patternRatio: 0.5;"
-      );
+      scene.setAttribute("renderer", "antialias: true; alpha: true; colorManagement: true;");
+      scene.setAttribute("arjs", buildArString());
 
       const assets = document.createElement("a-assets");
       const assetItem = document.createElement("a-asset-item");
@@ -157,14 +151,14 @@
       assets.appendChild(assetItem);
       scene.appendChild(assets);
 
-      const ambientLight = document.createElement("a-entity");
-      ambientLight.setAttribute("light", "type: ambient; intensity: 1.15; color: #ffffff;");
-      scene.appendChild(ambientLight);
+      const ambient = document.createElement("a-entity");
+      ambient.setAttribute("light", "type: ambient; intensity: 1.15; color: #ffffff;");
+      scene.appendChild(ambient);
 
-      const dirLight = document.createElement("a-entity");
-      dirLight.setAttribute("light", "type: directional; intensity: 1.2; color: #ffffff;");
-      dirLight.setAttribute("position", "1 2 1");
-      scene.appendChild(dirLight);
+      const directional = document.createElement("a-entity");
+      directional.setAttribute("light", "type: directional; intensity: 1.2; color: #ffffff;");
+      directional.setAttribute("position", "1 2 1");
+      scene.appendChild(directional);
 
       const marker = document.createElement("a-marker");
       marker.setAttribute("type", "pattern");
@@ -181,27 +175,24 @@
       model.setAttribute("rotation", MODEL_ROTATION);
       model.setAttribute("scale", MODEL_SCALE);
       marker.appendChild(model);
-
       scene.appendChild(marker);
 
       const camera = document.createElement("a-entity");
       camera.setAttribute("camera", "");
       scene.appendChild(camera);
 
-      app.appendChild(scene);
-      sceneMounted = true;
+      document.body.appendChild(scene);
+      mounted = true;
 
       scene.addEventListener("loaded", () => {
         fitMedia();
-        setTimeout(fitMedia, 500);
-        setTimeout(fitMedia, 1200);
+        setTimeout(fitMedia, 300);
+        setTimeout(fitMedia, 1000);
       });
 
       scene.addEventListener("renderstart", fitMedia);
       window.addEventListener("resize", fitMedia);
-      window.addEventListener("orientationchange", () => {
-        setTimeout(fitMedia, 250);
-      });
+      window.addEventListener("orientationchange", () => setTimeout(fitMedia, 250));
     }
 
     async function startExperience() {
@@ -212,26 +203,26 @@
       try {
         const patternUrl = await generatePattern(TARGET_IMAGE);
         mountScene(patternUrl);
+
+        setTimeout(() => {
+          const video = document.querySelector("video");
+          if (!video || video.readyState < 2) {
+            showOverlay();
+            started = false;
+          }
+        }, 1400);
       } catch (error) {
         console.error(error);
-        started = false;
         showOverlay();
+        started = false;
       }
     }
 
-    window.addEventListener("load", async () => {
-      await startExperience();
-      setTimeout(() => {
-        const video = document.querySelector("video");
-        if (!video || video.readyState < 2) {
-          showOverlay();
-        }
-      }, 1200);
+    window.addEventListener("load", () => {
+      startExperience();
     }, { once: true });
 
-    startButton.addEventListener("click", () => {
-      startExperience();
-    });
+    startButton.addEventListener("click", startExperience);
   </script>
 </body>
 </html>
