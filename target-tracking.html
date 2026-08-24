@@ -2,19 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Target Tracking Test</title>
 
   <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image.prod.js"></script>
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
-    html,
-    body {
+    html, body {
       margin: 0;
       width: 100%;
       height: 100%;
@@ -25,57 +21,20 @@
     body {
       position: fixed;
       inset: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     }
 
-    #scene-root,
-    a-scene,
-    video,
-    canvas,
-    .a-canvas {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    video,
-    canvas,
-    .a-canvas {
-      object-fit: cover !important;
-      background: #000 !important;
-    }
-
-    #boot {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      background: transparent;
+    #app {
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
 <body>
-  <div id="scene-root"></div>
-  <div id="boot" aria-hidden="true"></div>
+  <div id="app"></div>
 
   <script>
-    const TARGET_IMAGE_URL = "target-test.png?v=track03";
-    const MODEL_URL = "escultura_high_01.glb?v=track03";
-    const MODEL_POSITION = "0 0 -2";
-    const MODEL_SCALE = "0.3 0.3 0.3";
-    const MODEL_ROTATION = "0 180 0";
-
-    let started = false;
-
-    function forceFullscreen() {
-      const nodes = document.querySelectorAll("video, canvas, .a-canvas, a-scene");
-      nodes.forEach((node) => {
-        node.style.position = "fixed";
-        node.style.inset = "0";
-        node.style.width = "100%";
-        node.style.height = "100%";
-      });
-    }
+    const TARGET_IMAGE_URL = "target-test.png?v=track04";
+    const MODEL_URL = "escultura_high_01.glb?v=track04";
 
     function loadImage(src) {
       return new Promise((resolve, reject) => {
@@ -87,7 +46,7 @@
       });
     }
 
-    async function compileTarget() {
+    async function buildTargetFile() {
       const image = await loadImage(TARGET_IMAGE_URL);
       const compiler = new window.MINDAR.Compiler();
       await compiler.compileImageTargets([image], () => {});
@@ -96,69 +55,36 @@
       return URL.createObjectURL(blob);
     }
 
-    function buildScene(targetSrc) {
-      const scene = document.createElement("a-scene");
-      scene.setAttribute(
-        "mindar-image",
-        `imageTargetSrc: ${targetSrc}; autoStart: false; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.001;`
-      );
-      scene.setAttribute("embedded", "");
-      scene.setAttribute("vr-mode-ui", "enabled: false");
-      scene.setAttribute("device-orientation-permission-ui", "enabled: false");
-      scene.setAttribute("loading-screen", "enabled: false");
-      scene.setAttribute("renderer", "antialias: true; alpha: true; colorManagement: true; physicallyCorrectLights: true;");
-      scene.setAttribute("color-space", "sRGB");
-
-      scene.innerHTML = `
-        <a-assets>
-          <a-asset-item id="model" src="${MODEL_URL}"></a-asset-item>
-        </a-assets>
-
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-        <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
-        <a-entity light="type: directional; intensity: 0.85; color: #ffffff" position="0 2 1"></a-entity>
-
-        <a-entity mindar-image-target="targetIndex: 0">
-          <a-entity
-            gltf-model="#model"
-            position="${MODEL_POSITION}"
-            rotation="${MODEL_ROTATION}"
-            scale="${MODEL_SCALE}">
-          </a-entity>
-        </a-entity>
-      `;
-
-      document.getElementById("scene-root").replaceChildren(scene);
-      return scene;
-    }
-
     async function start() {
-      if (started) return;
-      started = true;
-
       try {
-        const targetSrc = await compileTarget();
-        const scene = buildScene(targetSrc);
+        const targetSrc = await buildTargetFile();
 
-        scene.addEventListener("loaded", async () => {
-          forceFullscreen();
-          const system = scene.systems["mindar-image-system"];
-          await system.start();
-          forceFullscreen();
-          document.getElementById("boot").remove();
-          setTimeout(forceFullscreen, 300);
-          setTimeout(forceFullscreen, 1000);
-        }, { once: true });
+        document.getElementById("app").innerHTML = `
+          <a-scene
+            mindar-image="imageTargetSrc: ${targetSrc}; uiLoading: no; uiScanning: no; uiError: no;"
+            color-space="sRGB"
+            renderer="colorManagement: true, physicallyCorrectLights"
+            vr-mode-ui="enabled: false"
+            device-orientation-permission-ui="enabled: false">
 
-        scene.addEventListener("renderstart", forceFullscreen);
-        window.addEventListener("resize", forceFullscreen);
-        window.addEventListener("orientationchange", () => {
-          setTimeout(forceFullscreen, 250);
-        });
+            <a-assets>
+              <a-asset-item id="sculptureModel" src="${MODEL_URL}"></a-asset-item>
+            </a-assets>
+
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+            <a-entity mindar-image-target="targetIndex: 0">
+              <a-gltf-model
+                src="#sculptureModel"
+                position="0 0 -2"
+                rotation="0 180 0"
+                scale="0.3 0.3 0.3">
+              </a-gltf-model>
+            </a-entity>
+          </a-scene>
+        `;
       } catch (error) {
-        console.error("MindAR start error:", error);
-        started = false;
+        console.error("MindAR error", error);
       }
     }
 
