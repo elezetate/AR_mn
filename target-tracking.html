@@ -8,8 +8,9 @@
   />
   <title>Target Tracking Test</title>
 
+  <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image.prod.js"></script>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
     html,
@@ -58,8 +59,8 @@
   <div id="boot" aria-hidden="true"></div>
 
   <script>
-    const TARGET_IMAGE_URL = "target-test.png?v=track02";
-    const MODEL_URL = "escultura_high_01.glb?v=track02";
+    const TARGET_IMAGE_URL = "target-test.png?v=track03";
+    const MODEL_URL = "escultura_high_01.glb?v=track03";
     const MODEL_POSITION = "0 0 -2";
     const MODEL_SCALE = "0.3 0.3 0.3";
     const MODEL_ROTATION = "0 180 0";
@@ -88,7 +89,7 @@
 
     async function compileTarget() {
       const image = await loadImage(TARGET_IMAGE_URL);
-      const compiler = new window.MINDAR.IMAGE.Compiler();
+      const compiler = new window.MINDAR.Compiler();
       await compiler.compileImageTargets([image], () => {});
       const buffer = await compiler.exportData();
       const blob = new Blob([buffer], { type: "application/octet-stream" });
@@ -105,7 +106,8 @@
       scene.setAttribute("vr-mode-ui", "enabled: false");
       scene.setAttribute("device-orientation-permission-ui", "enabled: false");
       scene.setAttribute("loading-screen", "enabled: false");
-      scene.setAttribute("renderer", "antialias: true; alpha: true; colorManagement: true;");
+      scene.setAttribute("renderer", "antialias: true; alpha: true; colorManagement: true; physicallyCorrectLights: true;");
+      scene.setAttribute("color-space", "sRGB");
 
       scene.innerHTML = `
         <a-assets>
