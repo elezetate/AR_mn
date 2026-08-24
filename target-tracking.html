@@ -6,11 +6,10 @@
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
   />
-  <title>AR Target Test</title>
+  <title>Target Tracking Test</title>
 
-  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/three.js/examples/marker-training/threex-arpatternfile.js"></script>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
     html,
@@ -25,204 +24,143 @@
     body {
       position: fixed;
       inset: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     }
 
-    #overlay {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.14);
-      z-index: 30;
-    }
-
-    #overlay.visible {
-      display: flex;
-    }
-
-    #start-button {
-      appearance: none;
-      border: 0;
-      border-radius: 999px;
-      padding: 14px 22px;
-      font: inherit;
-      font-size: 16px;
-      background: rgba(255, 255, 255, 0.94);
-      color: #111;
-      -webkit-tap-highlight-color: transparent;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
-    }
-
+    #scene-root,
     a-scene,
     video,
     canvas,
-    .a-canvas,
-    .arjs-video {
+    .a-canvas {
       position: fixed !important;
       inset: 0 !important;
       width: 100% !important;
       height: 100% !important;
+    }
+
+    video,
+    canvas,
+    .a-canvas {
       object-fit: cover !important;
       background: #000 !important;
     }
+
+    #boot {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      background: transparent;
+    }
   </style>
 </head>
-
 <body>
-  <div id="overlay">
-    <button id="start-button">Abrir camara</button>
-  </div>
+  <div id="scene-root"></div>
+  <div id="boot" aria-hidden="true"></div>
 
   <script>
-    const TARGET_IMAGE = "target-test.svg";
-    const MODEL_URL = "escultura_high_01.glb?v=targettest04";
-    const OFFSET_Z = -2;
+    const TARGET_IMAGE_URL = "target-test.png?v=track02";
+    const MODEL_URL = "escultura_high_01.glb?v=track02";
+    const MODEL_POSITION = "0 0 -2";
     const MODEL_SCALE = "0.3 0.3 0.3";
     const MODEL_ROTATION = "0 180 0";
 
-    const overlay = document.getElementById("overlay");
-    const startButton = document.getElementById("start-button");
-
     let started = false;
-    let mounted = false;
 
-    function showOverlay() {
-      overlay.classList.add("visible");
-    }
-
-    function hideOverlay() {
-      overlay.classList.remove("visible");
-    }
-
-    function generatePattern(imageUrl) {
-      return new Promise((resolve) => {
-        THREEx.ArPatternFile.encodeImageURL(imageUrl, (patternFileString) => {
-          const blob = new Blob([patternFileString], { type: "text/plain" });
-          resolve(URL.createObjectURL(blob));
-        });
-      });
-    }
-
-    function fitMedia() {
-      const nodes = document.querySelectorAll("video, canvas, .a-canvas, .arjs-video");
+    function forceFullscreen() {
+      const nodes = document.querySelectorAll("video, canvas, .a-canvas, a-scene");
       nodes.forEach((node) => {
         node.style.position = "fixed";
         node.style.inset = "0";
         node.style.width = "100%";
         node.style.height = "100%";
-        node.style.objectFit = "cover";
       });
     }
 
-    function buildArString() {
-      const width = window.innerWidth || 390;
-      const height = window.innerHeight || 844;
-
-      return [
-        "sourceType: webcam",
-        "facingMode: environment",
-        "debugUIEnabled: false",
-        "detectionMode: mono",
-        "patternRatio: 0.5",
-        "sourceWidth: 1280",
-        "sourceHeight: 960",
-        `displayWidth: ${width}`,
-        `displayHeight: ${height}`
-      ].join("; ");
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.crossOrigin = "anonymous";
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = src;
+      });
     }
 
-    function mountScene(patternUrl) {
-      if (mounted) return;
+    async function compileTarget() {
+      const image = await loadImage(TARGET_IMAGE_URL);
+      const compiler = new window.MINDAR.IMAGE.Compiler();
+      await compiler.compileImageTargets([image], () => {});
+      const buffer = await compiler.exportData();
+      const blob = new Blob([buffer], { type: "application/octet-stream" });
+      return URL.createObjectURL(blob);
+    }
 
+    function buildScene(targetSrc) {
       const scene = document.createElement("a-scene");
+      scene.setAttribute(
+        "mindar-image",
+        `imageTargetSrc: ${targetSrc}; autoStart: false; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.001;`
+      );
       scene.setAttribute("embedded", "");
       scene.setAttribute("vr-mode-ui", "enabled: false");
       scene.setAttribute("device-orientation-permission-ui", "enabled: false");
       scene.setAttribute("loading-screen", "enabled: false");
       scene.setAttribute("renderer", "antialias: true; alpha: true; colorManagement: true;");
-      scene.setAttribute("arjs", buildArString());
 
-      const assets = document.createElement("a-assets");
-      const assetItem = document.createElement("a-asset-item");
-      assetItem.setAttribute("id", "sculpture-glb");
-      assetItem.setAttribute("src", MODEL_URL);
-      assets.appendChild(assetItem);
-      scene.appendChild(assets);
+      scene.innerHTML = `
+        <a-assets>
+          <a-asset-item id="model" src="${MODEL_URL}"></a-asset-item>
+        </a-assets>
 
-      const ambient = document.createElement("a-entity");
-      ambient.setAttribute("light", "type: ambient; intensity: 1.15; color: #ffffff;");
-      scene.appendChild(ambient);
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      const directional = document.createElement("a-entity");
-      directional.setAttribute("light", "type: directional; intensity: 1.2; color: #ffffff;");
-      directional.setAttribute("position", "1 2 1");
-      scene.appendChild(directional);
+        <a-entity light="type: ambient; intensity: 1.2; color: #ffffff"></a-entity>
+        <a-entity light="type: directional; intensity: 0.85; color: #ffffff" position="0 2 1"></a-entity>
 
-      const marker = document.createElement("a-marker");
-      marker.setAttribute("type", "pattern");
-      marker.setAttribute("url", patternUrl);
-      marker.setAttribute("smooth", "true");
-      marker.setAttribute("smoothCount", "10");
-      marker.setAttribute("smoothTolerance", "0.01");
-      marker.setAttribute("smoothThreshold", "5");
-      marker.addEventListener("markerFound", hideOverlay);
+        <a-entity mindar-image-target="targetIndex: 0">
+          <a-entity
+            gltf-model="#model"
+            position="${MODEL_POSITION}"
+            rotation="${MODEL_ROTATION}"
+            scale="${MODEL_SCALE}">
+          </a-entity>
+        </a-entity>
+      `;
 
-      const model = document.createElement("a-entity");
-      model.setAttribute("gltf-model", "#sculpture-glb");
-      model.setAttribute("position", `0 0 ${OFFSET_Z}`);
-      model.setAttribute("rotation", MODEL_ROTATION);
-      model.setAttribute("scale", MODEL_SCALE);
-      marker.appendChild(model);
-      scene.appendChild(marker);
-
-      const camera = document.createElement("a-entity");
-      camera.setAttribute("camera", "");
-      scene.appendChild(camera);
-
-      document.body.appendChild(scene);
-      mounted = true;
-
-      scene.addEventListener("loaded", () => {
-        fitMedia();
-        setTimeout(fitMedia, 300);
-        setTimeout(fitMedia, 1000);
-      });
-
-      scene.addEventListener("renderstart", fitMedia);
-      window.addEventListener("resize", fitMedia);
-      window.addEventListener("orientationchange", () => setTimeout(fitMedia, 250));
+      document.getElementById("scene-root").replaceChildren(scene);
+      return scene;
     }
 
-    async function startExperience() {
+    async function start() {
       if (started) return;
       started = true;
-      hideOverlay();
 
       try {
-        const patternUrl = await generatePattern(TARGET_IMAGE);
-        mountScene(patternUrl);
+        const targetSrc = await compileTarget();
+        const scene = buildScene(targetSrc);
 
-        setTimeout(() => {
-          const video = document.querySelector("video");
-          if (!video || video.readyState < 2) {
-            showOverlay();
-            started = false;
-          }
-        }, 1400);
+        scene.addEventListener("loaded", async () => {
+          forceFullscreen();
+          const system = scene.systems["mindar-image-system"];
+          await system.start();
+          forceFullscreen();
+          document.getElementById("boot").remove();
+          setTimeout(forceFullscreen, 300);
+          setTimeout(forceFullscreen, 1000);
+        }, { once: true });
+
+        scene.addEventListener("renderstart", forceFullscreen);
+        window.addEventListener("resize", forceFullscreen);
+        window.addEventListener("orientationchange", () => {
+          setTimeout(forceFullscreen, 250);
+        });
       } catch (error) {
-        console.error(error);
-        showOverlay();
+        console.error("MindAR start error:", error);
         started = false;
       }
     }
 
-    window.addEventListener("load", () => {
-      startExperience();
-    }, { once: true });
-
-    startButton.addEventListener("click", startExperience);
+    window.addEventListener("load", start, { once: true });
   </script>
 </body>
 </html>
