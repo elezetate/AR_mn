@@ -47,7 +47,7 @@
         copyWorldTransform();
         trackedPlacement.object3D.visible = false;
         frozenPlacement.object3D.visible = true;
-        holdUntil = performance.now() + 1200;
+        holdUntil = performance.now() + 1500;
       });
 
       requestAnimationFrame(tick);
@@ -72,16 +72,16 @@
         src="#sculptureModel"
         position="0 0 0"
         rotation="0 180 0"
-        scale="3 3 3">
+        scale="2.4 2.4 2.4">
       </a-gltf-model>
     </a-entity>
 
     <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
       <a-entity
         id="tracked-placement"
-        position="0 0 -2"
+        position="0 0 -1"
         rotation="0 180 0"
-        scale="3 3 3">
+        scale="2.4 2.4 2.4">
         <a-gltf-model src="#sculptureModel"></a-gltf-model>
       </a-entity>
     </a-entity>
