@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Target Tracking Option B</title>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const targetAnchor = document.getElementById("target-anchor");
+      const trackedPlacement = document.getElementById("tracked-placement");
+      const lockedPlacement = document.getElementById("locked-placement");
+
+      let trackingActive = false;
+      let foundSince = 0;
+      let isLocked = false;
+
+      const copyWorldTransform = () => {
+        trackedPlacement.object3D.updateMatrixWorld(true);
+        trackedPlacement.object3D.matrixWorld.decompose(
+          lockedPlacement.object3D.position,
+          lockedPlacement.object3D.quaternion,
+          lockedPlacement.object3D.scale
+        );
+      };
+
+      const tick = () => {
+        if (!isLocked && trackingActive && foundSince && performance.now() - foundSince > 900) {
+          copyWorldTransform();
+          lockedPlacement.object3D.visible = true;
+          trackedPlacement.object3D.visible = false;
+          isLocked = true;
+        }
+        requestAnimationFrame(tick);
+      };
+
+      targetAnchor.addEventListener("targetFound", () => {
+        if (isLocked) return;
+        trackingActive = true;
+        foundSince = performance.now();
+        trackedPlacement.object3D.visible = true;
+      });
+
+      targetAnchor.addEventListener("targetLost", () => {
+        if (isLocked) return;
+        trackingActive = false;
+        foundSince = 0;
+        trackedPlacement.object3D.visible = false;
+      });
+
+      requestAnimationFrame(tick);
+    }, { once: true });
+  </script>
+</head>
+<body>
+  <a-scene
+    mindar-image="imageTargetSrc: targets-marina-v3.mind?v=optb01; maxTrack: 1; missTolerance: 30; warmupTolerance: 10; filterMinCF: 0.00001; filterBeta: 180;"
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+    <a-assets>
+      <a-asset-item id="sculptureModel" src="escultura_high_01.glb?v=optb01"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity id="locked-placement" visible="false">
+      <a-gltf-model
+        src="#sculptureModel"
+        position="0 0 0"
+        rotation="0 180 0"
+        scale="2.4 2.4 2.4">
+      </a-gltf-model>
+    </a-entity>
+
+    <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
+      <a-entity
+        id="tracked-placement"
+        position="0 0 -1"
+        rotation="0 180 0"
+        scale="2.4 2.4 2.4">
+        <a-gltf-model src="#sculptureModel"></a-gltf-model>
+      </a-entity>
+    </a-entity>
+  </a-scene>
+</body>
+</html>

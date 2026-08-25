@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Target Tracking Option A</title>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const targetAnchor = document.getElementById("target-anchor");
+      const trackedPlacement = document.getElementById("tracked-placement");
+      const frozenPlacement = document.getElementById("frozen-placement");
+
+      let holdUntil = 0;
+      let trackingActive = false;
+
+      const copyWorldTransform = () => {
+        trackedPlacement.object3D.updateMatrixWorld(true);
+        trackedPlacement.object3D.matrixWorld.decompose(
+          frozenPlacement.object3D.position,
+          frozenPlacement.object3D.quaternion,
+          frozenPlacement.object3D.scale
+        );
+      };
+
+      const tick = () => {
+        if (trackingActive) {
+          copyWorldTransform();
+          frozenPlacement.object3D.visible = false;
+        } else if (performance.now() < holdUntil) {
+          frozenPlacement.object3D.visible = true;
+        } else {
+          frozenPlacement.object3D.visible = false;
+        }
+        requestAnimationFrame(tick);
+      };
+
+      targetAnchor.addEventListener("targetFound", () => {
+        trackingActive = true;
+        trackedPlacement.object3D.visible = true;
+        frozenPlacement.object3D.visible = false;
+      });
+
+      targetAnchor.addEventListener("targetLost", () => {
+        trackingActive = false;
+        copyWorldTransform();
+        trackedPlacement.object3D.visible = false;
+        frozenPlacement.object3D.visible = true;
+        holdUntil = performance.now() + 1800;
+      });
+
+      requestAnimationFrame(tick);
+    }, { once: true });
+  </script>
+</head>
+<body>
+  <a-scene
+    mindar-image="imageTargetSrc: targets-marina-v3.mind?v=opta01; maxTrack: 1; missTolerance: 35; warmupTolerance: 10; filterMinCF: 0.00001; filterBeta: 200;"
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+    <a-assets>
+      <a-asset-item id="sculptureModel" src="escultura_high_01.glb?v=opta01"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity id="frozen-placement" visible="false">
+      <a-gltf-model
+        src="#sculptureModel"
+        position="0 0 0"
+        rotation="0 180 0"
+        scale="2.2 2.2 2.2">
+      </a-gltf-model>
+    </a-entity>
+
+    <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
+      <a-entity
+        id="tracked-placement"
+        position="0 0 -0.8"
+        rotation="0 180 0"
+        scale="2.2 2.2 2.2">
+        <a-gltf-model src="#sculptureModel"></a-gltf-model>
+      </a-entity>
+    </a-entity>
+  </a-scene>
+</body>
+</html>
