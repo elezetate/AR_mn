@@ -10,43 +10,57 @@
     document.addEventListener("DOMContentLoaded", () => {
       const targetAnchor = document.getElementById("target-anchor");
       const trackedPlacement = document.getElementById("tracked-placement");
-      const lockedPlacement = document.getElementById("locked-placement");
+      const smoothedPlacement = document.getElementById("smoothed-placement");
+
+      const targetPosition = new AFRAME.THREE.Vector3();
+      const targetQuaternion = new AFRAME.THREE.Quaternion();
+      const targetScale = new AFRAME.THREE.Vector3();
 
       let trackingActive = false;
-      let foundSince = 0;
-      let isLocked = false;
+      let holdUntil = 0;
+      let hasPose = false;
 
-      const copyWorldTransform = () => {
+      const syncTargetPose = () => {
         trackedPlacement.object3D.updateMatrixWorld(true);
         trackedPlacement.object3D.matrixWorld.decompose(
-          lockedPlacement.object3D.position,
-          lockedPlacement.object3D.quaternion,
-          lockedPlacement.object3D.scale
+          targetPosition,
+          targetQuaternion,
+          targetScale
         );
+
+        if (!hasPose) {
+          smoothedPlacement.object3D.position.copy(targetPosition);
+          smoothedPlacement.object3D.quaternion.copy(targetQuaternion);
+          smoothedPlacement.object3D.scale.copy(targetScale);
+          hasPose = true;
+          return;
+        }
+
+        smoothedPlacement.object3D.position.lerp(targetPosition, 0.12);
+        smoothedPlacement.object3D.quaternion.slerp(targetQuaternion, 0.12);
+        smoothedPlacement.object3D.scale.lerp(targetScale, 0.12);
       };
 
       const tick = () => {
-        if (!isLocked && trackingActive && foundSince && performance.now() - foundSince > 900) {
-          copyWorldTransform();
-          lockedPlacement.object3D.visible = true;
-          trackedPlacement.object3D.visible = false;
-          isLocked = true;
+        if (trackingActive) {
+          syncTargetPose();
+          smoothedPlacement.object3D.visible = true;
+        } else if (performance.now() < holdUntil && hasPose) {
+          smoothedPlacement.object3D.visible = true;
+        } else {
+          smoothedPlacement.object3D.visible = false;
         }
+
         requestAnimationFrame(tick);
       };
 
       targetAnchor.addEventListener("targetFound", () => {
-        if (isLocked) return;
         trackingActive = true;
-        foundSince = performance.now();
-        trackedPlacement.object3D.visible = true;
       });
 
       targetAnchor.addEventListener("targetLost", () => {
-        if (isLocked) return;
         trackingActive = false;
-        foundSince = 0;
-        trackedPlacement.object3D.visible = false;
+        holdUntil = performance.now() + 2500;
       });
 
       requestAnimationFrame(tick);
@@ -55,32 +69,33 @@
 </head>
 <body>
   <a-scene
-    mindar-image="imageTargetSrc: targets-marina-v3.mind?v=optb01; maxTrack: 1; missTolerance: 30; warmupTolerance: 10; filterMinCF: 0.00001; filterBeta: 180;"
+    mindar-image="imageTargetSrc: targets-marina-v3.mind?v=optb02; maxTrack: 1; missTolerance: 35; warmupTolerance: 10; filterMinCF: 0.00001; filterBeta: 220;"
     color-space="sRGB"
     renderer="colorManagement: true, physicallyCorrectLights"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
     <a-assets>
-      <a-asset-item id="sculptureModel" src="escultura_high_01.glb?v=optb01"></a-asset-item>
+      <a-asset-item id="sculptureModel" src="escultura_high_01.glb?v=optb02"></a-asset-item>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <a-entity id="locked-placement" visible="false">
+    <a-entity id="smoothed-placement" visible="false">
       <a-gltf-model
         src="#sculptureModel"
         position="0 0 0"
         rotation="0 180 0"
-        scale="2.4 2.4 2.4">
+        scale="2.3 2.3 2.3">
       </a-gltf-model>
     </a-entity>
 
     <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
       <a-entity
         id="tracked-placement"
-        position="0 0 -1"
+        position="0 0 -0.9"
         rotation="0 180 0"
-        scale="2.4 2.4 2.4">
+        scale="2.3 2.3 2.3"
+        visible="false">
         <a-gltf-model src="#sculptureModel"></a-gltf-model>
       </a-entity>
     </a-entity>
