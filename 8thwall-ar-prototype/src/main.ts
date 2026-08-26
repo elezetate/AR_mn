@@ -36,6 +36,8 @@ const config = {
   sculptureScale: 0.45,
   sculptureYawOffsetDeg: 180,
   sculptureHeightOffsetMeters: 0.7,
+  previewDistanceMeters: 0.08,
+  previewHeightOffsetMeters: 0.08,
   stabilizationSamplesNeeded: 8,
   stabilizationWindowMs: 1800,
   stabilizationPositionToleranceMeters: 0.06,
@@ -89,7 +91,7 @@ distanceButtons.forEach((button) => {
       candidate.classList.toggle('is-active', candidate === button)
     })
     if (lastStableObservation && worldAnchor) {
-      snapAnchorFromObservation(lastStableObservation, anchorLocked ? 'blend' : 'immediate')
+      snapAnchorFromObservation(lastStableObservation, anchorLocked ? 'blend' : 'immediate', !anchorLocked)
     }
     renderDiagnostics()
   })
@@ -289,13 +291,13 @@ function consumeObservation(observation: ImageTargetObservation, isFirstFound: b
 
   if (!anchorLocked) {
     // Keep a visible preview on screen while the target stabilizes.
-    snapAnchorFromObservation(observation, 'immediate')
+    snapAnchorFromObservation(observation, 'immediate', true)
     pruneSamples(observation.timestamp)
     anchorSamples.push(anchorSampleFromObservation(observation))
 
     if (anchorSamples.length >= config.stabilizationSamplesNeeded && sampleWindowIsStable(anchorSamples)) {
       lastStableObservation = observation
-      snapAnchorFromObservation(observation, 'immediate')
+      snapAnchorFromObservation(observation, 'immediate', false)
       anchorLocked = true
       setStatus(
         `Target estabilizado. Escultura anclada a ${currentDistanceMeters.toFixed(1)} m y mantenida por SLAM.`,
@@ -309,7 +311,7 @@ function consumeObservation(observation: ImageTargetObservation, isFirstFound: b
     }
   } else {
     lastStableObservation = observation
-    snapAnchorFromObservation(observation, 'blend')
+    snapAnchorFromObservation(observation, 'blend', false)
     setStatus('Target reacquirido. Recalibrando suavemente sin saltos visibles.')
   }
 
@@ -330,7 +332,11 @@ function updateTargetGhost(observation: ImageTargetObservation) {
   targetGhost.scale.setScalar(observation.scale)
 }
 
-function snapAnchorFromObservation(observation: ImageTargetObservation, mode: 'immediate' | 'blend') {
+function snapAnchorFromObservation(
+  observation: ImageTargetObservation,
+  mode: 'immediate' | 'blend',
+  usePreviewPlacement: boolean,
+) {
   if (!worldAnchor) return
 
   targetPosition.set(observation.position.x, observation.position.y, observation.position.z)
@@ -340,12 +346,17 @@ function snapAnchorFromObservation(observation: ImageTargetObservation, mode: 'i
     observation.rotation.z,
     observation.rotation.w,
   )
+  const distanceMeters = usePreviewPlacement ? config.previewDistanceMeters : currentDistanceMeters
+  const heightOffsetMeters = usePreviewPlacement
+    ? config.previewHeightOffsetMeters
+    : config.sculptureHeightOffsetMeters
+
   helperVector.copy(config.forwardAxisFromTarget)
-  helperVector.applyQuaternion(targetRotation).normalize().multiplyScalar(currentDistanceMeters)
+  helperVector.applyQuaternion(targetRotation).normalize().multiplyScalar(distanceMeters)
 
   worldCandidatePosition.copy(targetPosition)
   worldCandidatePosition.add(helperVector)
-  worldCandidatePosition.y += config.sculptureHeightOffsetMeters
+  worldCandidatePosition.y += heightOffsetMeters
   worldCandidateRotation.copy(targetRotation)
   worldCandidateScale.setScalar(1)
 
