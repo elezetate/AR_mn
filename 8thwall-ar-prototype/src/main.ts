@@ -1,5 +1,6 @@
 import './styles.css'
 
+import * as THREE from 'three'
 import {
   AmbientLight,
   BoxGeometry,
@@ -13,6 +14,8 @@ import {
   TorusKnotGeometry,
   Vector3,
 } from 'three'
+
+;(window as Window & {THREE?: typeof THREE}).THREE = THREE
 
 type AnchorSample = {
   timestamp: number
