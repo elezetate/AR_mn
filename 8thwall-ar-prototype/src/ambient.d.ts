@@ -20,6 +20,9 @@ declare global {
 
   type CameraPipelineModule = {
     name: string
+    onBeforeRun?: () => void
+    onCameraStatusChange?: (args: {status: string}) => void
+    onException?: (error: unknown) => void
     onStart?: () => void
     onUpdate?: (args: {
       processCpuResult: {

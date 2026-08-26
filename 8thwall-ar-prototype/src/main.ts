@@ -64,12 +64,15 @@ let trackingReason = 'UNSPECIFIED'
 let lastRecalibrationMeters = 0
 let lastObservedTargetWidth = 0
 let lastObservedTargetHeight = 0
+let hasVideo = false
 
 const statusText = must<HTMLParagraphElement>('#status-text')
 const diagnostics = must<HTMLElement>('#diagnostics')
 const resetButton = must<HTMLButtonElement>('#reset-button')
 const directionIndicator = must<HTMLElement>('#direction-indicator')
 const directionArrow = must<HTMLElement>('.direction-indicator__arrow')
+const errorOverlay = must<HTMLElement>('#error-overlay')
+const errorMessage = must<HTMLElement>('#error-message')
 const distanceButtons = [...document.querySelectorAll<HTMLButtonElement>('#distance-buttons button')]
 
 document.body.classList.toggle('debug-ui', debugMode)
@@ -139,6 +142,28 @@ if (window.XR8) {
 function createPrototypePipelineModule(): CameraPipelineModule {
   return {
     name: 'marina-prototype',
+    onBeforeRun: () => {
+      window.setTimeout(() => {
+        if (!hasVideo) {
+          showError(
+            'La camara no ha arrancado. Abre este enlace directamente en Chrome o Safari, acepta los permisos de camara y evita abrirlo dentro de una previsualizacion del chat.',
+          )
+        }
+      }, 6000)
+    },
+    onCameraStatusChange: ({status}: {status: string}) => {
+      if (status === 'hasVideo') {
+        hasVideo = true
+        hideError()
+        return
+      }
+
+      if (status === 'failed') {
+        showError(
+          'Chrome no pudo abrir la camara para esta experiencia. Revisa el permiso de camara del sitio y vuelve a abrir el enlace en una pestana normal del navegador.',
+        )
+      }
+    },
     onStart: () => {
       const xrScene = window.XR8?.Threejs.xrScene()
       if (!xrScene) return
@@ -147,6 +172,11 @@ function createPrototypePipelineModule(): CameraPipelineModule {
       buildScene(xrScene.scene)
       setStatus('Motor XR listo. Enfoca la imagen y muévete un poco para estimar escala real.')
       renderDiagnostics()
+    },
+    onException: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Fallo desconocido al iniciar 8th Wall.'
+      showError(message)
+      console.error(error)
     },
     onUpdate: ({processCpuResult}) => {
       trackingStatus = processCpuResult.reality?.trackingStatus ?? trackingStatus
@@ -435,7 +465,9 @@ function setStatus(message: string) {
 
 function handleFatalError(error: unknown) {
   console.error(error)
-  setStatus(error instanceof Error ? error.message : 'Error desconocido al iniciar XR.')
+  const message = error instanceof Error ? error.message : 'Error desconocido al iniciar XR.'
+  setStatus(message)
+  showError(message)
 }
 
 function must<T extends Element>(selector: string): T {
@@ -444,4 +476,13 @@ function must<T extends Element>(selector: string): T {
     throw new Error(`No se encontro el elemento ${selector}`)
   }
   return element
+}
+
+function showError(message: string) {
+  errorMessage.textContent = message
+  errorOverlay.classList.remove('is-hidden')
+}
+
+function hideError() {
+  errorOverlay.classList.add('is-hidden')
 }
