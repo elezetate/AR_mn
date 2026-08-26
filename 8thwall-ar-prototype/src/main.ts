@@ -8,7 +8,9 @@ import {
   DirectionalLight,
   Group,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
+  PlaneGeometry,
   Quaternion,
   SphereGeometry,
   TorusKnotGeometry,
@@ -36,8 +38,8 @@ const config = {
   sculptureScale: 0.45,
   sculptureYawOffsetDeg: 180,
   sculptureHeightOffsetMeters: 0.7,
-  previewDistanceMeters: 0.08,
-  previewHeightOffsetMeters: 0.08,
+  previewDistanceMeters: 0.02,
+  previewHeightOffsetMeters: 0,
   stabilizationSamplesNeeded: 8,
   stabilizationWindowMs: 1800,
   stabilizationPositionToleranceMeters: 0.06,
@@ -58,6 +60,7 @@ const projectedAnchor = new Vector3()
 let camera: any = null
 let worldAnchor: any = null
 let targetGhost: any = null
+let detectionBeacon: any = null
 let currentDistanceMeters = 0.5
 let lastObservation: ImageTargetObservation | null = null
 let lastStableObservation: ImageTargetObservation | null = null
@@ -261,6 +264,29 @@ function buildScene(currentScene: any) {
 
   sculptureRoot.add(base, body, beacon)
   worldAnchor.add(sculptureRoot)
+
+  detectionBeacon = new Group()
+  detectionBeacon.visible = false
+
+  const beaconPlane = new Mesh(
+    new PlaneGeometry(0.26, 0.38),
+    new MeshBasicMaterial({
+      color: new Color('#00f6ff'),
+      transparent: true,
+      opacity: 0.92,
+    }),
+  )
+
+  const beaconCore = new Mesh(
+    new SphereGeometry(0.045, 20, 20),
+    new MeshBasicMaterial({
+      color: new Color('#ff3bd4'),
+    }),
+  )
+  beaconCore.position.z = 0.03
+
+  detectionBeacon.add(beaconPlane, beaconCore)
+  worldAnchor.add(detectionBeacon)
   currentScene.add(worldAnchor)
 
   targetGhost = new Group()
@@ -373,6 +399,9 @@ function snapAnchorFromObservation(
 
   worldAnchor.scale.copy(worldCandidateScale)
   worldAnchor.visible = true
+  if (detectionBeacon) {
+    detectionBeacon.visible = usePreviewPlacement
+  }
 }
 
 function pruneSamples(now: number) {
