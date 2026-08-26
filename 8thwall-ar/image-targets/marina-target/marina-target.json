@@ -1,0 +1,23 @@
+{
+  "imagePath": "image-targets/marina-target_luminance.png",
+  "metadata": null,
+  "name": "marina-target",
+  "type": "PLANAR",
+  "properties": {
+    "left": 175,
+    "top": 0,
+    "width": 1050,
+    "height": 1400,
+    "isRotated": true,
+    "originalWidth": 1400,
+    "originalHeight": 1400
+  },
+  "resources": {
+    "originalImage": "marina-target_original.png",
+    "croppedImage": "marina-target_cropped.png",
+    "thumbnailImage": "marina-target_thumbnail.png",
+    "luminanceImage": "marina-target_luminance.png"
+  },
+  "created": 1787748042775,
+  "updated": 1787748042775
+}

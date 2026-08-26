@@ -1,21 +1,9 @@
-import {mkdir, readFile, writeFile} from 'node:fs/promises'
+import {mkdir, readdir, readFile, stat, writeFile} from 'node:fs/promises'
 import path from 'node:path'
 
 const projectDir = process.cwd()
 const distDir = path.join(projectDir, 'dist')
 const serverDir = path.join(distDir, 'server')
-
-const filesToEmbed = [
-  'index.html',
-  'assets/index-CBjuRJdy.css',
-  'assets/index-CyY_OF8E.js',
-  'image-targets/marina-target-source.png',
-  'image-targets/marina-target/marina-target.json',
-  'image-targets/marina-target/marina-target_cropped.png',
-  'image-targets/marina-target/marina-target_luminance.png',
-  'image-targets/marina-target/marina-target_original.png',
-  'image-targets/marina-target/marina-target_thumbnail.png',
-]
 
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -34,6 +22,8 @@ const cachePolicies = {
 }
 
 const embeddedEntries = []
+
+const filesToEmbed = await collectFiles(distDir)
 
 for (const relativePath of filesToEmbed) {
   const absolutePath = path.join(distDir, relativePath)
@@ -83,3 +73,27 @@ export default {
 
 await mkdir(serverDir, {recursive: true})
 await writeFile(path.join(serverDir, 'index.js'), workerSource, 'utf8')
+
+async function collectFiles(rootDir) {
+  const files = []
+
+  async function walk(currentDir, prefix = '') {
+    const entries = await readdir(currentDir)
+    for (const entry of entries) {
+      const absolutePath = path.join(currentDir, entry)
+      const relativePath = path.join(prefix, entry)
+      const entryStat = await stat(absolutePath)
+
+      if (entryStat.isDirectory()) {
+        if (relativePath === 'server') continue
+        await walk(absolutePath, relativePath)
+        continue
+      }
+
+      files.push(relativePath)
+    }
+  }
+
+  await walk(rootDir)
+  return files.sort()
+}

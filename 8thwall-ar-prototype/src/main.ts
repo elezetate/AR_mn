@@ -26,7 +26,7 @@ type ImageTargetObservation = ImageTargetEventDetail & {
 }
 
 const config = {
-  imageTargetUrl: '/image-targets/marina-target/marina-target.json',
+  imageTargetUrl: './image-targets/marina-target/marina-target.json',
   imageTargetName: 'marina-target',
   targetPhysicalWidthMeters: 0.297,
   targetPhysicalHeightMeters: 0.42,
@@ -39,6 +39,7 @@ const config = {
   recalibrationAlpha: 0.08,
   forwardAxisFromTarget: new Vector3(0, 0, -1),
 }
+const debugMode = new URLSearchParams(window.location.search).get('debug') === '1'
 
 const targetPosition = new Vector3()
 const targetRotation = new Quaternion()
@@ -70,6 +71,8 @@ const resetButton = must<HTMLButtonElement>('#reset-button')
 const directionIndicator = must<HTMLElement>('#direction-indicator')
 const directionArrow = must<HTMLElement>('.direction-indicator__arrow')
 const distanceButtons = [...document.querySelectorAll<HTMLButtonElement>('#distance-buttons button')]
+
+document.body.classList.toggle('debug-ui', debugMode)
 
 distanceButtons.forEach((button) => {
   button.addEventListener('click', () => {
@@ -357,6 +360,11 @@ function sampleWindowIsStable(samples: AnchorSample[]): boolean {
 }
 
 function updateIndicator() {
+  if (!debugMode) {
+    directionIndicator.classList.add('is-hidden')
+    return
+  }
+
   if (!camera || !worldAnchor || !worldAnchor.visible) {
     directionIndicator.classList.add('is-hidden')
     return

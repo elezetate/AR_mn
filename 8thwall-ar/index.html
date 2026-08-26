@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>8th Wall AR Prototype</title>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js"
+      async
+      crossorigin="anonymous"
+      data-preload-chunks="slam"
+    ></script>
+    <script type="module" crossorigin src="./assets/index-DxHVHV2Z.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-yEuC7vx6.css">
+  </head>
+  <body>
+    <canvas id="camerafeed"></canvas>
+    <div class="hud">
+      <div class="hud__panel hud__panel--top">
+        <p class="hud__eyebrow">Prototipo 8th Wall</p>
+        <h1>Anclaje target -> SLAM</h1>
+        <p id="status-text">Cargando motor XR...</p>
+      </div>
+
+      <div class="hud__panel hud__panel--bottom">
+        <div class="button-row" id="distance-buttons">
+          <button data-distance="0.5">0,5 m</button>
+          <button data-distance="1">1 m</button>
+          <button data-distance="2">2 m</button>
+          <button data-distance="3" class="is-active">3 m</button>
+        </div>
+        <div class="button-row">
+          <button id="reset-button">Reiniciar target</button>
+        </div>
+        <dl class="diagnostics" id="diagnostics"></dl>
+      </div>
+
+      <div class="direction-indicator is-hidden" id="direction-indicator">
+        <div class="direction-indicator__arrow"></div>
+        <span>Gira hacia la escultura</span>
+      </div>
+    </div>
+
+  </body>
+</html>

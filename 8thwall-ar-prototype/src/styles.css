@@ -45,6 +45,10 @@ body {
   padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) 14px;
 }
 
+body:not(.debug-ui) .hud {
+  display: none;
+}
+
 .hud__panel {
   align-self: stretch;
   max-width: min(420px, 100%);
