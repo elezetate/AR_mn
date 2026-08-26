@@ -1,0 +1,23 @@
+{
+  "type": "PLANAR",
+  "properties": {
+    "top": 0,
+    "left": 128,
+    "width": 768,
+    "height": 1024,
+    "isRotated": false,
+    "originalWidth": 1024,
+    "originalHeight": 1024
+  },
+  "imagePath": "image-targets/Imagen de Codex 25 ago 2026, 06_33_18 p.m._luminance.png",
+  "metadata": null,
+  "name": "Imagen de Codex 25 ago 2026, 06_33_18 p.m.",
+  "resources": {
+    "originalImage": "Imagen de Codex 25 ago 2026, 06_33_18 p.m._original.png",
+    "croppedImage": "Imagen de Codex 25 ago 2026, 06_33_18 p.m._cropped.png",
+    "thumbnailImage": "Imagen de Codex 25 ago 2026, 06_33_18 p.m._thumbnail.png",
+    "luminanceImage": "Imagen de Codex 25 ago 2026, 06_33_18 p.m._luminance.png"
+  },
+  "created": 1787760750905,
+  "updated": 1787760750905
+}
