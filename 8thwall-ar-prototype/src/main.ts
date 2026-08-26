@@ -81,6 +81,7 @@ const directionIndicator = must<HTMLElement>('#direction-indicator')
 const directionArrow = must<HTMLElement>('.direction-indicator__arrow')
 const errorOverlay = must<HTMLElement>('#error-overlay')
 const errorMessage = must<HTMLElement>('#error-message')
+const targetFlash = must<HTMLElement>('#target-flash')
 const distanceButtons = [...document.querySelectorAll<HTMLButtonElement>('#distance-buttons button')]
 
 document.body.classList.toggle('debug-ui', debugMode)
@@ -106,6 +107,7 @@ resetButton.addEventListener('click', () => {
   targetVisible = false
   lastStableObservation = null
   lastRecalibrationMeters = 0
+  targetFlash.classList.add('is-hidden')
   if (worldAnchor) {
     worldAnchor.visible = false
   }
@@ -199,6 +201,7 @@ function createPrototypePipelineModule(): CameraPipelineModule {
         event: 'reality.imagelost',
         process: () => {
           targetVisible = false
+          targetFlash.classList.add('is-hidden')
           if (!anchorLocked && worldAnchor) {
             worldAnchor.visible = false
           }
@@ -309,6 +312,7 @@ function consumeObservation(observation: ImageTargetObservation, isFirstFound: b
   }
 
   targetVisible = true
+  targetFlash.classList.remove('is-hidden')
   lastObservation = observation
   lastObservedTargetWidth = observation.scaledWidth ?? lastObservedTargetWidth
   lastObservedTargetHeight = observation.scaledHeight ?? lastObservedTargetHeight
