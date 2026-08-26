@@ -36,9 +36,9 @@ const config = {
   sculptureScale: 0.45,
   sculptureYawOffsetDeg: 180,
   sculptureHeightOffsetMeters: 0.7,
-  stabilizationSamplesNeeded: 18,
+  stabilizationSamplesNeeded: 8,
   stabilizationWindowMs: 1800,
-  stabilizationPositionToleranceMeters: 0.035,
+  stabilizationPositionToleranceMeters: 0.06,
   recalibrationAlpha: 0.08,
   forwardAxisFromTarget: new Vector3(0, 0, -1),
 }
@@ -56,7 +56,7 @@ const projectedAnchor = new Vector3()
 let camera: any = null
 let worldAnchor: any = null
 let targetGhost: any = null
-let currentDistanceMeters = 3
+let currentDistanceMeters = 0.5
 let lastObservation: ImageTargetObservation | null = null
 let lastStableObservation: ImageTargetObservation | null = null
 let anchorSamples: AnchorSample[] = []
@@ -194,6 +194,9 @@ function createPrototypePipelineModule(): CameraPipelineModule {
         event: 'reality.imagelost',
         process: () => {
           targetVisible = false
+          if (!anchorLocked && worldAnchor) {
+            worldAnchor.visible = false
+          }
           setStatus(
             anchorLocked
               ? 'Target fuera de cámara. La escultura sigue anclada en SLAM.'
@@ -285,6 +288,8 @@ function consumeObservation(observation: ImageTargetObservation, isFirstFound: b
   updateTargetGhost(observation)
 
   if (!anchorLocked) {
+    // Keep a visible preview on screen while the target stabilizes.
+    snapAnchorFromObservation(observation, 'immediate')
     pruneSamples(observation.timestamp)
     anchorSamples.push(anchorSampleFromObservation(observation))
 
