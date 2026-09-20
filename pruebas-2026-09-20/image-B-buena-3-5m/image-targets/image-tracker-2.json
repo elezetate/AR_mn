@@ -1,0 +1,23 @@
+{
+  "type": "PLANAR",
+  "properties": {
+    "top": 0,
+    "left": 0,
+    "width": 6046,
+    "height": 8061,
+    "isRotated": false,
+    "originalWidth": 8061,
+    "originalHeight": 8061
+  },
+  "imagePath": "image-targets/image-tracker-2_luminance.jpg",
+  "metadata": null,
+  "name": "image-tracker-2",
+  "resources": {
+    "originalImage": "image-tracker-2_original.jpg",
+    "croppedImage": "image-tracker-2_cropped.jpg",
+    "thumbnailImage": "image-tracker-2_thumbnail.jpg",
+    "luminanceImage": "image-tracker-2_luminance.jpg"
+  },
+  "created": 1789811681453,
+  "updated": 1789820975428
+}
