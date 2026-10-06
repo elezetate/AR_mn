@@ -1,0 +1,23 @@
+{
+  "type": "PLANAR",
+  "properties": {
+    "top": 0,
+    "left": 442,
+    "width": 2657,
+    "height": 3543,
+    "isRotated": false,
+    "originalWidth": 3543,
+    "originalHeight": 3543
+  },
+  "imagePath": "image-targets/Marina AR2_luminance.jpg",
+  "metadata": null,
+  "name": "Marina AR2",
+  "resources": {
+    "originalImage": "Marina AR2_original.jpg",
+    "croppedImage": "Marina AR2_cropped.jpg",
+    "thumbnailImage": "Marina AR2_thumbnail.jpg",
+    "luminanceImage": "Marina AR2_luminance.jpg"
+  },
+  "created": 1791276549285,
+  "updated": 1791276549285
+}
